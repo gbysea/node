@@ -6,6 +6,36 @@ port = parseInt(process.env.PORT || 8000);
 
 console.log('pid ' + process.pid);
 
+/* Usage: node http_simple.js [--garbage=<amount> [k|m|g] ] */
+if (process.argv[2]) {
+  var result = process.argv[2].match(/^\s*--garbage=(\d+)(k|K|m|M|g|G|)\s*$/);
+  if (result) {
+    var bytes = +result[1];
+    switch ((result[2] || '').toLowerCase()) {
+      case 'k':
+        bytes <<= 10;
+        break;
+      case 'm':
+        bytes <<= 20;
+        break;
+      case 'g':
+        bytes <<= 30;
+        break;
+    }
+
+    console.log("Generating approximately " + bytes + " bytes of garbage");
+
+    var garbage = [];
+    var garbage_creation_buffer = new Buffer(65536);
+    garbage_creation_buffer.fill(32);
+    while (process.memoryUsage().heapUsed < bytes) {
+      garbage.push(garbage_creation_buffer.toString('ascii'));
+    }
+
+    console.log("Memory usage:", process.memoryUsage());
+  }
+}
+
 fixed = ""
 for (var i = 0; i < 20*1024; i++) {
   fixed += "C";
