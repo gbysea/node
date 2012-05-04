@@ -183,10 +183,10 @@ static void StopGCTimer () {
 static void Idle(uv_idle_t* watcher, int status) {
   assert((uv_idle_t*) watcher == &gc_idle);
 
-  if (V8::IdleNotification()) {
-    uv_idle_stop(&gc_idle);
-    StopGCTimer();
-  }
+  V8::IdleNotification();
+
+  uv_idle_stop(&gc_idle);
+  StopGCTimer();
 }
 
 
@@ -1415,10 +1415,16 @@ static void CheckStatus(uv_timer_t* watcher, int status) {
   if (!uv_is_active((uv_handle_t*) &gc_idle)) {
     HeapStatistics stats;
     V8::GetHeapStatistics(&stats);
-    if (stats.total_heap_size() > 1024 * 1024 * 128) {
-      // larger than 128 megs, just start the idle watcher
-      uv_idle_start(&gc_idle, node::Idle);
-      return;
+    uint64_t heap_size = stats.total_heap_size();
+    if (heap_size > 1024 * 1024 * 128);
+      uint64_t heap_used = stats.used_heap_size();
+      uint64_t heap_used_percent = (heap_used * 100) / heap_size;
+      if (heap_used_percent > 75) {
+        // larger than 128 megs and more than 75% full, just start the idle
+        // watcher
+        uv_idle_start(&gc_idle, node::Idle);
+        return;
+      }
     }
   }
 
