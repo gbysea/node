@@ -1415,11 +1415,10 @@ static void CheckStatus(uv_timer_t* watcher, int status) {
   if (!uv_is_active((uv_handle_t*) &gc_idle)) {
     HeapStatistics stats;
     V8::GetHeapStatistics(&stats);
-    uint64_t heap_size = stats.total_heap_size();
-    if (heap_size > 1024 * 1024 * 128);
-      uint64_t heap_used = stats.used_heap_size();
-      uint64_t heap_used_percent = (heap_used * 100) / heap_size;
-      if (heap_used_percent > 75) {
+    size_t heap_size = stats.total_heap_size();
+    if (heap_size > 1024 * 1024 * 128) {
+      size_t heap_used = stats.used_heap_size();
+      if (heap_size - heap_used < heap_size / 4) {
         // larger than 128 megs and more than 75% full, just start the idle
         // watcher
         uv_idle_start(&gc_idle, node::Idle);
